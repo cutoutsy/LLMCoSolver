@@ -394,8 +394,18 @@ def compute_metric_cop(predictions, labels, instances, problem):
                 continue
 
             tour_str = pred_match.group(1)
-            tour_list = list(map(int, tour_str.split(", ")))
+            # 模型输出的token可能是非数字，导致 int() 转换失败 → ValueError
+            try:
+                tour_list = list(map(int, tour_str.split(", ")))
+            except ValueError:
+                infeasibility += 1
+                continue
 
+            # 城市索引必须落在实例范围内
+            n_cities = len(instances[i])
+            if len(tour_list) == 0 or min(tour_list) < 0 or max(tour_list) >= n_cities:
+                infeasibility += 1
+                continue
             # Check feasibility
             if len(set(tour_list)) != len(set(tour_label)):
                 infeasibility += 1
